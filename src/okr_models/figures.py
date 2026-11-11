@@ -50,7 +50,14 @@ def contamination(p, a0, k, alpha):
 
 def fit_contamination(p: np.ndarray, y: np.ndarray, a0: float) -> tuple[float, float, float]:
     """Fit the two free parameters k and alpha with a0 fixed to the measured baseline.
-    Returns (k, alpha, R^2); several starting points, least squares, 0 <= k <= 100, 0 <= alpha <= 1."""
+    Returns (k, alpha, R^2); several starting points, least squares, 0 <= k <= 100, 0 <= alpha <= 1.
+    With a0 = 0 (an unmasked grating gives LK speed 0, see README) the model is alpha p and k is undefined (nan)."""
+    ss_tot = float(np.sum((y - np.mean(y)) ** 2))
+    if a0 <= 0:
+        alpha = float(np.clip(np.dot(p, y) / np.dot(p, p), 0.0, 1.0))
+        cost = float(np.sum((y - alpha * p) ** 2))
+        return float("nan"), alpha, (1.0 - cost / ss_tot if ss_tot > 1e-15 else 0.0)
+
     def f(pp, k, alpha):
         return contamination(pp, a0, k, alpha)
     best = (np.inf, None)
@@ -64,7 +71,6 @@ def fit_contamination(p: np.ndarray, y: np.ndarray, a0: float) -> tuple[float, f
             if cost < best[0]:
                 best = (cost, popt)
     k, alpha = (float(v) for v in best[1])
-    ss_tot = float(np.sum((y - np.mean(y)) ** 2))
     r2 = 1.0 - best[0] / ss_tot if ss_tot > 1e-15 else 0.0
     return k, alpha, r2
 
@@ -110,10 +116,8 @@ def panel_4a(ax, results, rec):
     dots_line, = ax.plot(d["levels_pct"], m, color="#333333", marker="x", ms=3, lw=1.5)
     rec["4a_dots"] = {"x": d["levels_pct"], "mean": m, "sd": s, "n": len(d["speed"])}
     h, lab = ax.get_legend_handles_labels()
-    leg = ax.legend(h[::-1], lab[::-1], title="Gratings (cycles per image width)", loc="upper right",
-                    fontsize=7, title_fontsize=7, frameon=False)
-    ax.add_artist(leg)
-    ax.legend([dots_line], ["Moving Dots"], loc="upper center", fontsize=7, frameon=False)
+    ax.legend([dots_line] + h[::-1], ["Moving Dots"] + lab[::-1], title="Gratings\n(cycles per image width)",
+              loc="best", fontsize=7, title_fontsize=7, frameon=False)
     ax.set_title("Without Gaussian Blur: gratings vs dots")
     ax.set_ylabel(r"Mean LK speed $\|u\|$ (pixel/frame)")
 
@@ -165,7 +169,8 @@ def panel_4e(ax, results, rec):
         p = d["levels_pct"] / 100.0
         k, alpha, r2 = fit_contamination(p, y, a0=float(y[0]))
         ax.scatter(d["levels_pct"], y, color=FIG4E_COLORS[n], s=10, zorder=4)
-        ax.plot(pf * 100, contamination(pf, y[0], k, alpha), color=FIG4E_COLORS[n], lw=1.5, label=str(n))
+        fit = alpha * pf if y[0] <= 0 else contamination(pf, y[0], k, alpha)
+        ax.plot(pf * 100, fit, color=FIG4E_COLORS[n], lw=1.5, label=str(n))
         rec[f"4e_grating{n}"] = {"x": d["levels_pct"], "median_norm": y, "a0": y[0], "k": k, "alpha": alpha, "r2": r2}
     d = collect(results, "rw120_dots_s10")
     y = np.nanmedian(d["speed"], axis=0) / GT
@@ -176,7 +181,7 @@ def panel_4e(ax, results, rec):
     ax.set_title(r"Integration window ($R_w$ = 120 px), Blur (σ = 10)")
     ax.set_ylabel(r"LK speed / $u_{\mathrm{norm}}$")
     ax.set_ylim(bottom=0)
-    ax.legend(title="Gratings (cycles per image width)", loc="upper right", fontsize=7, title_fontsize=7, frameon=False)
+    ax.legend(title="Gratings\n(cycles per image width)", loc="upper right", fontsize=7, title_fontsize=7, frameon=False)
 
 
 def _w105_curves(results):
@@ -208,7 +213,7 @@ def panels_4fgh(axes, results, rec, okr):
     axes[0].set_title(r"Absolute LK Speed ($R_w$ = 105 px)")
     axes[0].set_ylabel(r"LK speed $u$ (pixel/frame)")
     axes[0].set_ylim(bottom=0)
-    axes[0].legend(title="Blur σ", loc="upper right", frameon=False)
+    axes[0].legend(title="Blur σ", loc="upper right", bbox_to_anchor=(1.0, 0.92), frameon=False)
     axes[1].set_title(r"Normalized LK Speed ($R_w$ = 105 px)")
     axes[1].set_ylabel("Normalized LK speed")
     axes[1].set_ylim(-0.05, 1.1)

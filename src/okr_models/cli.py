@@ -53,7 +53,15 @@ def cmd_figures(a) -> int:
 
 # Values of the full run for mask realisation 100 (seed 100) at 0 %, 50 % and 95 % scotomas.
 DEMO = ["r3_dots_s10", "rw105_dots_s10", "rw120_grating8_s10", "E_s10"]
-DEMO_EXPECTED: dict[str, dict[str, list[float]]] = {}
+DEMO_EXPECTED: dict[str, dict[str, list[float]]] = {
+    "r3_dots_s10": {"speed_px_per_frame": [11.540521048577281, 8.68436831202484, 3.5008652408763],
+                    "direction_error_deg": [0.5, 0.25, 5.0]},
+    "rw105_dots_s10": {"speed_px_per_frame": [10.465666495309346, 0.9049498870687925, 0.1724311642683262],
+                       "direction_error_deg": [0.5, 0.25, 5.0]},
+    "rw120_grating8_s10": {"speed_px_per_frame": [0.0, 0.7391954785186438, 0.17122422520423794],
+                           "direction_error_deg": [83.75, 0.25, 4.75]},
+    "E_s10": {"mean_confidence": [0.9965686202049255, 0.9487642198801041, 0.8426978141069412]},
+}
 
 
 def cmd_demo(a) -> int:
