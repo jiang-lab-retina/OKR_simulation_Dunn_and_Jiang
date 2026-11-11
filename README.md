@@ -58,7 +58,7 @@ The demo computes one mask realisation (seed 100) for four conditions:
 - an 8-cycle grating, R_w = 120 px, σ = 10;
 - the E with σ = 10.
 
-It prints the speed, direction error or confidence at 0 %, 50 % and 95 % scotomas, and checks them against the values of the full run. Expected output ends with `demo matches the expected values`. Typical run time: DEMO_TIME on 15 worker processes.
+It prints the speed, direction error or confidence at 0 %, 50 % and 95 % scotomas, and checks them against the values of the full run. Expected output ends with `demo matches the expected values`. Typical run time: about 1.5 minutes on 15 worker processes, most of it generating the masks of realisation 100.
 
 ## Reproducing Fig 4 and Fig S5
 
